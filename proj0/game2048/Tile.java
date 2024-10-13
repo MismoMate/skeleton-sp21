@@ -36,7 +36,7 @@ public class Tile {
         return next == null ? this : next;
     }
 
-    /** Return a new tile at (ROW, COL) with value VALUE. */
+    /** Return a new tile at (ROW, COL) with VALUE. */
     public static Tile create(int value, int col, int row) {
         return new Tile(value, col, row);
     }
@@ -48,7 +48,7 @@ public class Tile {
         return result;
     }
 
-    /** Return the result of merging OTHERTILE with me after moving to
+    /** Return the result of merging OTHER TILE with me after moving to
      *  (COL, ROW). */
     public Tile merge(int col, int row, Tile otherTile) {
         assert value == otherTile.value();

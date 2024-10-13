@@ -1,5 +1,6 @@
 package game2048;
 
+import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.Observable;
 
@@ -25,7 +26,7 @@ public class Model extends Observable {
     /** Largest piece value. */
     public static final int MAX_PIECE = 2048;
 
-    /** A new 2048 game on a board of size SIZE with no pieces
+    /** A new 2048 game on a board of SIZE with no pieces
      *  and score 0. */
     public Model(int size) {
         board = new Board(size);
@@ -33,7 +34,7 @@ public class Model extends Observable {
         gameOver = false;
     }
 
-    /** A new 2048 game where RAWVALUES contain the values of the tiles
+    /** A new 2048 game where RAW VALUES contain the values of the tiles
      * (0 if null). VALUES is indexed by (row, col) with (0, 0) corresponding
      * to the bottom-left corner. Used for testing purposes. */
     public Model(int[][] rawValues, int score, int maxScore, boolean gameOver) {
@@ -109,10 +110,16 @@ public class Model extends Observable {
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
-
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+
+        for (int i = 0; i < this.board.size(); i++) {
+
+            if (positionCellsInColumn(this.board, i)) {
+                changed = true;
+            }
+        }
 
         checkGameOver();
         if (changed) {
@@ -120,6 +127,44 @@ public class Model extends Observable {
         }
         return changed;
     }
+
+    //iterate over each cell in a column
+    private boolean positionCellsInColumn(Board b, int col) {
+        ArrayList<Integer> emptyCells = new ArrayList<>();
+        int currentIndex = 0;
+        //use to check if collisions are possible
+        Tile canCollide = null;
+        boolean changed = false;
+        for (int row = 3; row >= 0; row--) {
+            Tile t = b.tile(col, row);
+            if (t == null) {
+                emptyCells.add(row);
+                continue;
+            }
+            if (canCollide != null) {
+                if (canCollide.value() == t.value()) {                    
+                    int canRow = canCollide.row();
+                    b.move(col, canRow, t);
+                    this.score += b.tile(col, canRow).value();
+                    emptyCells.add(row++);
+                    canCollide = null;
+                    changed = true;
+                    continue;
+                }
+            }
+            if (emptyCells.isEmpty()) {
+                canCollide = t;
+                continue;
+            }
+
+            b.move(col, emptyCells.get(currentIndex), t);
+            canCollide = b.tile(col, emptyCells.get(currentIndex));
+            changed = true;
+            emptyCells.remove(currentIndex);
+        }
+        return changed;
+    }
+
 
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
@@ -138,6 +183,13 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null)
+                    return true;
+            }
+        }
         return false;
     }
 
@@ -148,6 +200,14 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null)
+                    continue;
+                if (b.tile(i,j).value() == MAX_PIECE)
+                    return true;
+            }
+        }
         return false;
     }
 
@@ -159,7 +219,33 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        return sameAdjacent(b);
+    }
+
+    private static boolean sameAdjacent(Board b) {
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null)
+                    return true;
+                for (int z = -1; z < 2; z += 2) {
+                    if (outsideRange(i, j, z, b.size() - 1))
+                        continue;
+                    //validate that i -+ 1 is same
+                    if (b.tile(i, j).value() == b.tile(i + z, j).value()) {
+                        return true;
+                    }
+                    //validate that j -+ 1 is same
+                    if (b.tile(i, j).value() == b.tile(i, j + z).value()) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
+    }
+
+    private static boolean outsideRange(int i, int j, int z, int size) {
+        return (i + z < 0) || (i + z > size) || (j + z < 0) || (j + z > size);
     }
 
 
